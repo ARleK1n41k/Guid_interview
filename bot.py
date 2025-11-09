@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 # Состояния разговора
 (START, RESPONDENT_INFO, DAY_MAP, PAIN_POINTS, PAIN_POINTS_OTHER, REGULAR_PROBLEMS, 
  PAIN_NAME, PAIN_CASE, PAIN_REASON, PAIN_EMOTION, PAIN_SCORE,
- MAGIC_WAND, INSIGHTS_SURPRISE, INSIGHTS_NEEDS, INSIGHTS_FOOD, INSIGHTS_PAY) = range(16)
+ MAGIC_WAND, INSIGHTS_SURPRISE, INSIGHTS_NEEDS, INSIGHTS_FOOD, INSIGHTS_PAY,
+ CONFIRM_CLEAR_DATA) = range(17)
 
 # Хранилище данных
 interviews = {}
@@ -664,6 +665,7 @@ async def insights_complete(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"Команды:\n"
             f"/export_all - скачать таблицу Excel со всеми респондентами\n"
             f"/stats - посмотреть статистику\n"
+            f"/clear_data - очистить все данные\n"
             f"/start - начать новое интервью"
         )
         
@@ -847,6 +849,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"Команды:\n"
             f"/export_all - скачать общую таблицу Excel\n"
             f"/stats - показать эту статистику\n"
+            f"/clear_data - очистить все данные (осторожно!)\n"
             f"/start - начать новое интервью"
         )
         
@@ -877,6 +880,90 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     except Exception as e:
         logger.error(f"Ошибка в cancel: {e}", exc_info=True)
+        return ConversationHandler.END
+
+async def clear_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда для очистки всех данных"""
+    try:
+        global all_interviews
+        
+        total = len(all_interviews)
+        
+        if total == 0:
+            await update.message.reply_text(
+                "📊 База данных уже пуста. Нет данных для удаления."
+            )
+            return
+        
+        keyboard = [["✅ Да, удалить все данные"], ["❌ Нет, отменить"]]
+        reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+        
+        await update.message.reply_text(
+            f"⚠️ ВНИМАНИЕ! Вы собираетесь удалить ВСЕ данные!\n\n"
+            f"📊 Всего записей в базе: {total}\n\n"
+            f"Это действие нельзя отменить!\n\n"
+            f"Вы уверены, что хотите удалить все данные?",
+            reply_markup=reply_markup
+        )
+        
+        return CONFIRM_CLEAR_DATA
+        
+    except Exception as e:
+        logger.error(f"Ошибка в clear_data: {e}", exc_info=True)
+        await update.message.reply_text("Произошла ошибка при подготовке очистки данных.")
+        return ConversationHandler.END
+
+async def confirm_clear_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Подтверждение очистки данных"""
+    try:
+        global all_interviews
+        
+        choice = update.message.text.strip()
+        
+        if "Да" in choice or "удалить" in choice.lower():
+            # Сохраняем количество для отчета
+            total_deleted = len(all_interviews)
+            
+            # Очищаем данные в памяти
+            all_interviews.clear()
+            
+            # Очищаем файл Excel (перезаписываем пустым DataFrame)
+            try:
+                filename = "все_интервью.xlsx"
+                filepath = os.path.join(os.getcwd(), filename)
+                
+                # Создаем пустой DataFrame и сохраняем
+                df = pd.DataFrame()
+                df.to_excel(filepath, index=False, engine='openpyxl')
+                
+                logger.info(f"Data cleared. Deleted {total_deleted} records. File cleared.")
+            except Exception as e:
+                logger.warning(f"Could not clear Excel file: {e}")
+                # Продолжаем, даже если файл не удалось очистить
+            
+            await update.message.reply_text(
+                f"✅ Данные успешно удалены!\n\n"
+                f"📊 Удалено записей: {total_deleted}\n"
+                f"📁 Файл Excel очищен\n\n"
+                f"База данных теперь пуста. Можно начинать новые интервью!",
+                reply_markup=ReplyKeyboardRemove()
+            )
+            
+        else:
+            await update.message.reply_text(
+                "❌ Очистка данных отменена.\n\n"
+                "Данные сохранены.",
+                reply_markup=ReplyKeyboardRemove()
+            )
+        
+        return ConversationHandler.END
+        
+    except Exception as e:
+        logger.error(f"Ошибка в confirm_clear_data: {e}", exc_info=True)
+        await update.message.reply_text(
+            "Произошла ошибка при очистке данных.",
+            reply_markup=ReplyKeyboardRemove()
+        )
         return ConversationHandler.END
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -946,9 +1033,19 @@ def main():
         application.add_handler(CommandHandler("export_all", export_all))
         application.add_handler(CommandHandler("stats", stats))
         
+        # Обработчик очистки данных (с подтверждением)
+        clear_data_handler = ConversationHandler(
+            entry_points=[CommandHandler('clear_data', clear_data)],
+            states={
+                CONFIRM_CLEAR_DATA: [MessageHandler(filters.TEXT & ~filters.COMMAND, confirm_clear_data)],
+            },
+            fallbacks=[CommandHandler('cancel', cancel)]
+        )
+        application.add_handler(clear_data_handler)
+        
         logger.info("Bot initialized successfully. Starting polling...")
         print("Bot initialized successfully. Starting polling...")
-        print("Bot commands: /start, /export_all, /stats, /cancel")
+        print("Bot commands: /start, /export_all, /stats, /clear_data, /cancel")
         
         # Запускаем бота с улучшенной обработкой ошибок
         application.run_polling(
