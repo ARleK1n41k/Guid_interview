@@ -11,7 +11,7 @@
    - Запустите `setup_local.bat` (Windows)
    - Или создайте файл `.env` вручную и добавьте:
      ```
-     BOT_TOKEN=8534429029:AAEfNtwvASUcpzaL3m8L3tGDmHkTbq25QMs
+     BOT_TOKEN=8534429029:AAFhc4gNNTco5hu3jB9xa3zfSm_hUWtevR4
      ```
 
 3. **Запустите бота:**
@@ -28,7 +28,7 @@
 3. Создайте новый проект → "Deploy from GitHub repo"
 4. Добавьте переменную окружения:
    - Name: `BOT_TOKEN`
-   - Value: `8534429029:AAEfNtwvASUcpzaL3m8L3tGDmHkTbq25QMs`
+   - Value: `8534429029:AAFhc4gNNTco5hu3jB9xa3zfSm_hUWtevR4`
 5. Готово! Бот работает 24/7 🎉
 
 **Подробная инструкция:** См. файл `DEPLOY.md`

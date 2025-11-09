@@ -12,7 +12,7 @@ if exist .env (
 )
 
 echo Создаю файл .env...
-echo BOT_TOKEN=8534429029:AAEfNtwvASUcpzaL3m8L3tGDmHkTbq25QMs > .env
+echo BOT_TOKEN=8534429029:AAFhc4gNNTco5hu3jB9xa3zfSm_hUWtevR4 > .env
 
 if exist .env (
     echo ✓ Файл .env успешно создан!
@@ -22,7 +22,7 @@ if exist .env (
     echo ✗ Ошибка при создании файла .env
     echo.
     echo Создайте файл .env вручную и добавьте:
-    echo BOT_TOKEN=8534429029:AAEfNtwvASUcpzaL3m8L3tGDmHkTbq25QMs
+    echo BOT_TOKEN=8534429029:AAFhc4gNNTco5hu3jB9xa3zfSm_hUWtevR4
 )
 
 echo.

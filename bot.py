@@ -122,7 +122,7 @@ def save_all_to_excel():
     global all_interviews
     
     if not all_interviews:
-        logger.warning("Нет данных для сохранения в Excel")
+        logger.warning("No data to save to Excel")
         return None
     
     try:
@@ -132,15 +132,19 @@ def save_all_to_excel():
         if 'Время_записи' in df.columns:
             df = df.sort_values('Время_записи', ascending=True)
         
-        # Сохраняем в файл
+        # Определяем путь к файлу (используем текущую директорию)
+        # На Railway файлы можно сохранять в корневую директорию проекта
         filename = "все_интервью.xlsx"
-        df.to_excel(filename, index=False, engine='openpyxl')
+        filepath = os.path.join(os.getcwd(), filename)
         
-        logger.info(f"Данные сохранены в {filename}, всего записей: {len(all_interviews)}")
-        return filename
+        # Сохраняем в файл
+        df.to_excel(filepath, index=False, engine='openpyxl')
+        
+        logger.info(f"Data saved to {filepath}, total records: {len(all_interviews)}")
+        return filepath
         
     except Exception as e:
-        logger.error(f"Ошибка при сохранении в Excel: {e}", exc_info=True)
+        logger.error(f"Error saving to Excel: {e}", exc_info=True)
         return None
 
 def get_user_interview(user_id):
@@ -877,17 +881,20 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик ошибок"""
-    logger.error(f"Update {update} caused error {context.error}", exc_info=context.error)
+    try:
+        logger.error(f"Update {update} caused error {context.error}", exc_info=context.error)
+    except Exception as e:
+        logger.error(f"Error in error handler: {e}")
     
     if update and update.message:
         try:
             await update.message.reply_text(
-                "⚠️ Произошла непредвиденная ошибка.\n"
+                "Произошла непредвиденная ошибка.\n"
                 "Попробуйте использовать /start для начала нового интервью "
                 "или /cancel для отмены текущего."
             )
         except Exception as e:
-            logger.error(f"Ошибка при отправке сообщения об ошибке: {e}")
+            logger.error(f"Error sending error message: {e}")
 
 def main():
     """Запуск бота"""
@@ -895,13 +902,18 @@ def main():
     TOKEN = os.getenv('BOT_TOKEN')
     
     if not TOKEN:
-        logger.error("BOT_TOKEN не найден в переменных окружения!")
-        print("❌ Ошибка: BOT_TOKEN не найден в переменных окружения!")
-        print("Создайте файл .env и добавьте туда: BOT_TOKEN=your_token_here")
-        print("Или установите переменную окружения BOT_TOKEN")
+        error_msg = "BOT_TOKEN not found in environment variables!"
+        logger.error(error_msg)
+        print(f"ERROR: {error_msg}")
+        print("Create .env file and add: BOT_TOKEN=your_token_here")
+        print("Or set environment variable BOT_TOKEN")
         return
     
     try:
+        logger.info("Starting bot initialization...")
+        print("Starting bot initialization...")
+        
+        # Создаем приложение
         application = Application.builder().token(TOKEN).build()
         
         # Обработчик ошибок
@@ -934,14 +946,24 @@ def main():
         application.add_handler(CommandHandler("export_all", export_all))
         application.add_handler(CommandHandler("stats", stats))
         
-        logger.info("🚀 Бот запущен! Команды: /start, /export_all, /stats, /cancel")
-        print("🚀 Бот запущен! Команды: /start, /export_all, /stats, /cancel")
+        logger.info("Bot initialized successfully. Starting polling...")
+        print("Bot initialized successfully. Starting polling...")
+        print("Bot commands: /start, /export_all, /stats, /cancel")
         
-        application.run_polling()
+        # Запускаем бота с улучшенной обработкой ошибок
+        application.run_polling(
+            drop_pending_updates=True,
+            allowed_updates=Update.ALL_TYPES
+        )
         
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")
+        print("Bot stopped by user")
     except Exception as e:
-        logger.error(f"Критическая ошибка при запуске бота: {e}", exc_info=True)
-        print(f"❌ Критическая ошибка: {e}")
+        error_msg = f"Critical error during bot startup: {e}"
+        logger.error(error_msg, exc_info=True)
+        print(f"CRITICAL ERROR: {error_msg}")
+        raise
 
 if __name__ == '__main__':
     main()

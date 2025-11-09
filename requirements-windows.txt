@@ -1,0 +1,8 @@
+# Альтернативный файл requirements для Windows
+# Используйте этот файл, если обычный requirements.txt не работает
+
+python-telegram-bot>=20.7
+pandas>=2.1.0
+openpyxl>=3.1.2
+python-dotenv>=1.0.0
+

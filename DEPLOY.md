@@ -17,7 +17,7 @@
    - В настройках проекта найдите "Variables"
    - Добавьте новую переменную:
      - **Name:** `BOT_TOKEN`
-     - **Value:** `8534429029:AAEfNtwvASUcpzaL3m8L3tGDmHkTbq25QMs` (ваш токен)
+     - **Value:** `8534429029:AAFhc4gNNTco5hu3jB9xa3zfSm_hUWtevR4` (ваш токен)
 
 4. **Готово!**
    - Railway автоматически определит Python проект
@@ -54,7 +54,7 @@
    - В разделе "Environment"
    - Добавьте:
      - **Key:** `BOT_TOKEN`
-     - **Value:** `8534429029:AAEfNtwvASUcpzaL3m8L3tGDmHkTbq25QMs`
+     - **Value:** `8534429029:AAFhc4gNNTco5hu3jB9xa3zfSm_hUWtevR4`
 
 5. **Создайте сервис**
    - Нажмите "Create Web Service"
